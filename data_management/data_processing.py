@@ -34,15 +34,19 @@ class Data_Processor():
             csv_string_12 = './ACS_local_data/ACS_12_5YR_' + key + '_with_ann.csv'
             meta_string_12 = './ACS_local_data/ACS_12_5YR_' + key + '_metadata.csv'            
 
-            self.puma_fin_17_df[key] = pd.read_csv(csv_string_17, skiprows=[1], encoding = "ISO-8859-1")
+            self.puma_fin_17_df[key] = pd.read_csv(csv_string_17, skiprows=[1], encoding = "ISO-8859-1",low_memory=False)
             self.puma_fin_17_meta_df[key] = pd.read_csv(meta_string_17)
-            self.puma_fin_12_df[key] = pd.read_csv(csv_string_12, skiprows=[1], encoding = "ISO-8859-1")
+            self.puma_fin_12_df[key] = pd.read_csv(csv_string_12, skiprows=[1], encoding = "ISO-8859-1",low_memory=False)
             self.puma_fin_12_meta_df[key] = pd.read_csv(meta_string_12)
 
         self.target = ['GEO.id2']
         metro_data_xls = pd.ExcelFile('./metro_data.xls')
         self.metro_gdp_df = metro_data_xls.parse('metro_gdp')
-
+        self.state_abb_df = metro_data_xls.parse('state_abb')        
+        self.metro_gdp_df = self.metro_gdp_df.drop(self.metro_gdp_df.index[0])
+        # Add a percentage change column
+        self.metro_gdp_df['percent_chg'] = self.metro_gdp_df[2017] / self.metro_gdp_df[2012] - 1
+        
         
     def _load_data_variables(self):
         """
@@ -165,7 +169,6 @@ class Data_Processor():
                 elif ''.join([val_12, '_12']) in self.table_dictionary[key].columns:
                     self.table_dictionary[key] = self.table_dictionary[key].rename({''.join([val_12,'_12']):''.join([self.data_variables[key][idx][1],'_12'])}, axis=1)
 
-
     def _populate_pc_data_table(self):
         """
         This function populates a new data frame with data that is to be
@@ -192,6 +195,13 @@ class Data_Processor():
                                            on='GEO.id2',
                                            how='inner')
 
+    def _get_city_state(self, geoname_str):
+        city_state_abb = geoname_str.split('(')[0]
+        city_state_split = geoname_str.split(',')
+        city = city_state_split[0]
+        state = city_state_split[1].split('(')[0].strip(' ')
+        state = state.split('-')[0]
+        return city, state, city_state_abb[:-1]
 
     def standardize_data(self):
         self.X = self.pca_data_frame.loc[:, self.feature_list].values
@@ -199,17 +209,18 @@ class Data_Processor():
         self.X = StandardScaler().fit_transform(self.X)
 
     def run_PCA(self):
-        self.pca = PCA(n_components=2)
+        self.pca = PCA(n_components=3)
         principal_components = self.pca.fit_transform(self.X)
-        pc = self.pca.fit(self.X)
 
         principal_DF = pd.DataFrame(data = principal_components,
-                                    columns = ['PC1','PC2'])
-        self.finalDF = pd.concat([principal_DF,
+                                    columns = ['PC1','PC2','PC3'])
+        self.pc_DF = pd.concat([principal_DF,
                                   self.pca_data_frame.loc[:, self.target]],
                                  axis=1)
 
 
-        self.finalDF['GEO.id2'] = self.finalDF['GEO.id2'].astype(str)
-        mask = self.finalDF['GEO.id2'].str.len() == 6
-        self.finalDF.loc[mask,'GEO.id2'] = '0' + self.finalDF[mask]['GEO.id2']
+        self.pc_DF['GEO.id2'] = self.pc_DF['GEO.id2'].astype(str)
+        mask = self.pc_DF['GEO.id2'].str.len() == 6
+        self.pc_DF.loc[mask,'GEO.id2'] = '0' + self.pc_DF[mask]['GEO.id2']
+
+        self.pc_DF['summary_pc'] = 0.2*self.pc_DF['PC1'] + 0.1*self.pc_DF['PC2'] + 0.1*self.pc_DF['PC3']

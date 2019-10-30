@@ -100,7 +100,7 @@ class GeoInformation():
     
     def set_plot_data(self):
         state_mask, city_mask = self._get_active_state_metro_masks()
-#       return self.plotting_df = self.puma_gdf[state_mask]
+        #return self.puma_gdf[state_mask]
         return self.puma_gdf[state_mask & city_mask]
 
     def get_active_city_location(self):
