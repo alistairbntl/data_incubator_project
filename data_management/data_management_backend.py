@@ -18,33 +18,13 @@ class GeoInformation():
         self.load_data()
 
     def load_data(self):
-        # states_file_name= "tl_2017_us_state.zip"
-        # states_url = f"https://www2.census.gov/geo/tiger/TIGER2017/STATE/{states_file_name}"
-        # states_file = pathlib.Path(states_file_name)
-
-        # zipcode_file_name = "tl_2017_us_zcta510.zip"
-        # zipcode_url = f"https://www2.census.gov/geo/tiger/TIGER2017/ZCTA5/{zipcode_file_name}"
-        # zipcode_file = pathlib.Path(zipcode_file_name)
-
-        # county_file_name = 'tl_2017_us_county.zip'
-        # county_url = f"https://www2.census.gov/geo/tiger/TIGER2017/COUNTY/{county_file_name}"
-        # county_file = pathlib.Path(county_file_name)
-
-        # metro_file_name = 'tl_2017_us_cbsa.zip'
-        # metro_url = f"https://www2.census.gov/geo/tiger/TIGER2017/CBSA/{metro_file_name}"
-        # metro_file = pathlib.Path(metro_file_name)
 
         puma_gdf_list = []
         for file_name in os.listdir('./'):
             if 'puma' in file_name:
                         puma_gdf_list.append(gpd.read_file(f"zip://{pathlib.Path(file_name)}"))
                         puma_gdf = pd.concat(puma_gdf_list, axis=0, ignore_index=True)
-
         self.puma_gdf = pd.concat(puma_gdf_list, axis=0, ignore_index=True)
-        # self.states_gdf = gpd.read_file(f"zip://{states_file}")
-        # self.county_gdf = gpd.read_file(f"zip://{county_file}")
-        # self.metro_gdf = gpd.read_file(f"zip://{metro_file}")
-        # self.zip_gdf = gpd.read_file(f"zip://{zipcode_file}")
        
         metro_data_xls = pd.ExcelFile('./metro_data.xls')
         metro_state_map_df = metro_data_xls.parse('metro_2_state')
