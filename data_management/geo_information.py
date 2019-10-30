@@ -78,8 +78,9 @@ class GeoInformation():
         metro_code = self.metro_state_map_df[metro_mask]['CBSA_Code'].iloc[0]
         metro_code_mask = self.metro_state_map_df['CBSA_Code'] == metro_code
         return self.metro_state_map_df[metro_code_mask]['County'].unique()
-            
-    def set_plot_data(self):
+
+
+    def _get_active_state_metro_masks(self):
         state = self.get_active_state()
         state_code = self.get_state_code(state)
         metro = self.get_active_metro()
@@ -95,18 +96,15 @@ class GeoInformation():
 
         city_county_mask = self.puma_gdf['NAMELSAD10'].str.contains(conditional_str[:-1],
                                                                     regex=True)
-#        self.plotting_df = self.puma_gdf[(self.puma_gdf['STATEFP10'] == state_code)]
-        return self.puma_gdf[state_mask & city_county_mask]
+        return state_mask, city_county_mask
+    
+    def set_plot_data(self):
+        state_mask, city_mask = self._get_active_state_metro_masks()
+#       return self.plotting_df = self.puma_gdf[state_mask]
+        return self.puma_gdf[state_mask & city_mask]
 
     def get_active_city_location(self):
-        state = self.get_active_state()
-        state_code = self.get_state_code(state)
-        metro = self.get_active_metro()
-        metro_names = metro[:-4].split('-')
-
-        state_mask = self.puma_gdf['STATEFP10'] == state_code
-        city_mask = self.puma_gdf['NAMELSAD10'].str.contains(metro_names[0],
-                                                             regex=True)
-
+        state_mask, city_mask = self._get_active_state_metro_masks()
+        
         return [self.puma_gdf[state_mask & city_mask]['INTPTLAT10'].iloc[0],
                 self.puma_gdf[state_mask & city_mask]['INTPTLON10'].iloc[0]]
